@@ -1,0 +1,32 @@
+server:
+  port: 8090
+
+spring:
+  application:
+    name: booking-processor
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: ${KAFKA_CONSUMER_GROUP:booking-processor}
+
+aws:
+  region: ${AWS_REGION:us-east-1}
+  dynamodb:
+    endpoint: ${DYNAMODB_ENDPOINT:http://localhost:8000}
+  accessKeyId: ${AWS_ACCESS_KEY_ID:local}
+  secretAccessKey: ${AWS_SECRET_ACCESS_KEY:local}
+
+app:
+  dynamodb:
+    table-name: ${BOOKINGS_TABLE_NAME:Bookings}
+  kafka:
+    topic:
+      booking-requests: ${BOOKING_REQUESTS_TOPIC:booking-requests}
+  booking:
+    capacity-per-timeslot: ${BOOKING_CAPACITY_PER_TIMESLOT:6}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

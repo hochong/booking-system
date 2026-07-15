@@ -1,0 +1,31 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: booking-api
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+
+aws:
+  region: ${AWS_REGION:us-east-1}
+  # Leave endpoint empty in real AWS so the SDK resolves the regional DynamoDB endpoint,
+  # and rely on the default credential chain (IAM role/env vars) instead of accessKeyId/secretAccessKey.
+  dynamodb:
+    endpoint: ${DYNAMODB_ENDPOINT:http://localhost:8000}
+  accessKeyId: ${AWS_ACCESS_KEY_ID:local}
+  secretAccessKey: ${AWS_SECRET_ACCESS_KEY:local}
+
+app:
+  dynamodb:
+    table-name: ${BOOKINGS_TABLE_NAME:Bookings}
+    auto-create-table: ${AUTO_CREATE_TABLE:true}
+  kafka:
+    topic:
+      booking-requests: ${BOOKING_REQUESTS_TOPIC:booking-requests}
+  business-hours:
+    start: "09:00"
+    end: "17:00"
+    slot-minutes: 60
+  cors:
+    allowed-origin: ${CORS_ALLOWED_ORIGIN:http://localhost:5173}
