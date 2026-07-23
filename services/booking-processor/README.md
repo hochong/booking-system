@@ -28,8 +28,28 @@ repo root), and `booking-api` running first so the `Bookings` table exists.
 mvn spring-boot:run
 ```
 
-Starts on `http://localhost:8090` (only exposes `/actuator/health` and
-`/actuator/info` — there's no public REST API here, it's a pure consumer).
+Starts on `http://localhost:8090` (only exposes `/actuator/health`,
+`/actuator/info`, and the rewind endpoints below — there's no public
+booking API here, it's mostly a pure consumer).
+
+## Rewinding / replaying events
+
+Since `decide()` only acts on bookings still `PENDING`, replaying already-processed
+events is a no-op for them — safe to call any time.
+
+```bash
+# Replay everything published since a given instant (e.g. after fixing a bug
+# in BookingDecisionService, to reprocess bookings from when it was broken):
+curl -X POST "http://localhost:8090/admin/kafka/rewind?since=2026-07-15T00:00:00Z"
+
+# Replay the whole booking-requests topic from the earliest retained offset:
+curl -X POST http://localhost:8090/admin/kafka/rewind/beginning
+```
+
+Both return `202 Accepted` immediately — the actual seek happens on the
+consumer's own thread before its next poll. This is unauthenticated and meant
+for local/internal use; put it behind admin auth (or remove it) before
+running anywhere shared.
 
 ## Configuration
 

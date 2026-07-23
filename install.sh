@@ -71,6 +71,9 @@ mvn -f services/booking-api/pom.xml -q dependency:go-offline
 echo "==> Installing booking-processor dependencies"
 mvn -f services/booking-processor/pom.xml -q dependency:go-offline
 
+echo "==> Installing notification-service dependencies"
+mvn -f services/notification-service/pom.xml -q dependency:go-offline
+
 echo "==> Installing frontend dependencies"
 npm install --prefix frontend
 

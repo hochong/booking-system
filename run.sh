@@ -35,6 +35,35 @@ kill_tree() {
   kill -TERM "$pid" 2>/dev/null || true
 }
 
+# Self-healing safety net: the Ctrl+C cleanup above only works if this script's
+# own trap actually gets to run (closing the terminal window, an IDE's "kill
+# terminal" button, or a crash can all bypass it). Rather than relying on that
+# being perfect, reclaim our known ports from any leftover process on startup
+# too, so a bad previous shutdown can never again block this run with "port
+# already in use" - each ./run.sh becomes idempotent regardless of how the
+# last one ended.
+free_port() {
+  local port="$1"
+  if [[ "$(detect_os)" == "windows" ]]; then
+    local pid
+    for pid in $(netstat -ano 2>/dev/null | grep ":$port " | grep LISTENING | awk '{print $NF}' | sort -u); do
+      echo "  Port $port was still in use by leftover process $pid - stopping it"
+      taskkill //PID "$pid" //F >/dev/null 2>&1 || true
+    done
+  else
+    local pid
+    for pid in $(lsof -ti "tcp:$port" 2>/dev/null || true); do
+      echo "  Port $port was still in use by leftover process $pid - stopping it"
+      kill -9 "$pid" 2>/dev/null || true
+    done
+  fi
+}
+
+echo "==> Checking for leftover processes from a previous run"
+for port in 8080 8090 8095 5173; do
+  free_port "$port"
+done
+
 cleanup() {
   [[ "$CLEANED_UP" -eq 1 ]] && return
   CLEANED_UP=1
@@ -61,6 +90,10 @@ echo "==> Starting booking-processor (logs/booking-processor.log)"
 (cd services/booking-processor && mvn -q spring-boot:run) > logs/booking-processor.log 2>&1 &
 PIDS+=("$!")
 
+echo "==> Starting notification-service (logs/notification-service.log)"
+(cd services/notification-service && mvn -q spring-boot:run) > logs/notification-service.log 2>&1 &
+PIDS+=("$!")
+
 echo "==> Starting frontend (logs/frontend.log)"
 (cd frontend && npm run dev) > logs/frontend.log 2>&1 &
 PIDS+=("$!")
@@ -71,13 +104,15 @@ All services starting:
   frontend             http://localhost:5173
   booking-api          http://localhost:8080
   booking-processor    http://localhost:8090  (no public API - background consumer)
+  notification-service http://localhost:8095  (no public API - background consumer)
   kafka-ui             http://localhost:8081
   dynamodb-admin       http://localhost:8002
+  mailpit (sent email) http://localhost:8025
 
 Tailing logs/*.log below. Press Ctrl+C to stop everything.
 EOF
 
-tail -f logs/booking-api.log logs/booking-processor.log logs/frontend.log &
+tail -f logs/booking-api.log logs/booking-processor.log logs/notification-service.log logs/frontend.log &
 PIDS+=("$!")
 
 wait

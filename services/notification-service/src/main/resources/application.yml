@@ -1,0 +1,34 @@
+server:
+  port: 8095
+
+spring:
+  application:
+    name: notification-service
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: ${KAFKA_CONSUMER_GROUP:notification-service}
+  mail:
+    host: ${SMTP_HOST:localhost}
+    port: ${SMTP_PORT:1025}
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+
+app:
+  kafka:
+    topic:
+      booking-requests: ${BOOKING_REQUESTS_TOPIC:booking-requests}
+  notification:
+    from-email: ${NOTIFICATION_FROM_EMAIL:no-reply@booking-system.local}
+    # Dummy fixed recipient for now - not tied to the person who made the booking.
+    recipient-email: ${NOTIFICATION_RECIPIENT_EMAIL:booking-notify@example.com}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

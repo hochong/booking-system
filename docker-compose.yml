@@ -25,7 +25,7 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
     healthcheck:
-      test: ["CMD-SHELL", "kafka-broker-api-versions.sh --bootstrap-server localhost:9092 || exit 1"]
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 || exit 1"]
       interval: 10s
       timeout: 10s
       retries: 10
@@ -44,7 +44,7 @@ services:
   dynamodb-local:
     image: amazon/dynamodb-local:latest
     container_name: booking-dynamodb-local
-    command: ["-jar", "DynamoDBLocal.jar", "-sharedDb", "-inMemory"]
+    command: ["-jar", "DynamoDBLocal.jar", "-sharedDb", "-inMemory", "-disableTelemetry"]
     ports:
       - "8000:8000"
 
@@ -60,3 +60,13 @@ services:
       AWS_SECRET_ACCESS_KEY: "local"
     depends_on:
       - dynamodb-local
+
+  # Local SMTP catcher for notification-service: it "sends" real emails via SMTP, but
+  # they land here instead of a real inbox - view them at the web UI instead of needing
+  # any real mail account/credentials.
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: booking-mailpit
+    ports:
+      - "1025:1025" # SMTP
+      - "8025:8025" # Web UI
